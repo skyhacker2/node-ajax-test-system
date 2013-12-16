@@ -63,12 +63,13 @@
 				}
 			});
 		}
-		
+		var urls = [];
 		socket.on('news', function (data) {
 			socket.emit('client',{});
 		});
 		socket.on('url_data', function (data) {
-			console.log(data);
+			urls = data.urls;
+			console.log(urls);
 		});
 
 		socket.on('start the job', function (data) {
@@ -96,7 +97,7 @@
 			//console.log(data);
 			var counter = count();
 			var failCounter = count();
-			var urls = data.urls;
+			//var urls = data.urls;
 			//console.log(urls);
 			console.log("test: " + urls.length);
 			$(".total").html(urls.length);

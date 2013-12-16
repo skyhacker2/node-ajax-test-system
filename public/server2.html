@@ -28,6 +28,7 @@
 					<th>Finished</th>
 					<th>Finished Time</th>
 					<th>Failed</th>
+					<th>Five Second Finished</th>
 				</tr>
 			<thead>
 			<tbody>
@@ -53,6 +54,7 @@
 					'<td>' + clients[i].finished + '</td>',
 					'<td>' + clients[i].time + ' ms</td>',
 					'<td>' + clients[i].fail + '</td>',
+					'<td>' + clients[i].five + '</td>'
 					].join(''));
 			}
 			$(".url_num").html(data.url_num);
@@ -60,11 +62,11 @@
 
 		$(".start-btn").click(function() {
 			console.log('start');
-			var num = $(".num").val();
-			socket.emit('start urls', {num: num});
+			socket.emit('start urls', {});
 		});
 		$(".reset").click(function() {
-			socket.emit("reset clients",{});
+			var num = $(".num").val();
+			socket.emit("reset clients",{num: num});
 		});
 	</script>
 </body>

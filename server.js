@@ -4,7 +4,8 @@ var express = require('express')
   , io = require('socket.io').listen(server)
   , urls = require('./lib/urls')
   , clients = []
-  , sockets = [];
+  , sockets = []
+  , MAX_URL = 100;
 
 var counter = function() {
   var i = 1;
@@ -55,11 +56,13 @@ io.sockets.on('connection', function (socket) {
       time: 0,
       requested: 0,
       requestTime: 0,
-      fail: 0
+      fail: 0,
+      five:0
     });
     sockets.push(socket);
     socket.broadcast.emit('client_conn', {clients: clients});
-    //socket.emit("url_data", {urls: urls.get(100)});
+    socket.emit("url_data", {urls: urls.get(MAX_URL)});
+    console.log("MAX_URL: " + MAX_URL);
   });
 
   // Client finish one.
@@ -68,6 +71,8 @@ io.sockets.on('connection', function (socket) {
       if (clients[i].id === socket.id) {
         clients[i].finished += 1;
         clients[i].time = data.time;
+        if (parseInt(data.time) <= 5000)
+          clients[i].five +=1;
         break;
       }
     }
@@ -110,20 +115,23 @@ io.sockets.on('connection', function (socket) {
 
   // Start to test different urls
   socket.on('start urls', function (data) {
-    var num = parseInt(data.num);
-    console.log(num);
     console.log('start urls');
+    /*
     for (var i = 0; i < sockets.length; i++) {
       (function() {
         sockets[i].emit('start the job urls', {urls: urls.get(num)});
       })();
     }
-    //socket.broadcast.emit('start the job urls',  {urls: urls.get(num)});
+    */
+    socket.broadcast.emit('start the job urls',  {});
   });
 
   // Reset the clients
   socket.on('reset clients', function (data) {
     console.log('reset clients');
+    urls.reset();
+    console.log(parseInt(data.num));
+    MAX_URL = parseInt(data.num);
     socket.broadcast.emit('reset', {});
   });
 
@@ -138,6 +146,7 @@ io.sockets.on('connection', function (socket) {
         sockets.splice(i, 1);
       }
     }
+    socket.broadcast.emit('client_conn', {clients: clients});
     console.log('DISCONNESSO!!! ');
   });  
 });
