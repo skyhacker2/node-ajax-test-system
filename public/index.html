@@ -1,0 +1,131 @@
+<html>
+<head>
+	<title>client</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+	<div class="container">
+		<h1>Hello Client</h1>
+		<h2>Total: (<span class="total"></span>) Finished: (<span class="msg"></span>) Fail: (<span class="fail"></span>)</h2>
+		<hr>
+		<div class="image">
+		</div>
+	</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="js/jquery.js"></script>
+	<script>
+		var socket = io.connect('http://192.168.10.107:8080');
+		function count() {
+			var i = 0;
+			var start = new Date();
+			return function () {
+				var end = new Date();
+				var spend = end - start;
+				i++;
+				return {finished: i, time: spend};
+			}
+		}
+		function getImage(res, c) {
+			c--;
+			var row = Math.floor(c/4);
+			//console.log(row);
+			if (c % 4 == 0) {
+				$(".image").append([
+					'<div class="row row' + row + '">',
+					'</div>'
+					].join(''));
+			}
+			$(".row" + row).append([
+				'<div class="col-md-3">',
+				'<div class="thumbnail">',
+				'<img style="width:300px;height: 200px;" src=',
+				'"http://192.168.10.107/snapshot/template/' + res.rid + '.png">',
+				'<div class="caption">',
+				'<a href="' + res.url + '" target="_blank">' + res.title + '</a>',
+				'<p>' + res.description + '</p>',
+				'</div></div></div>'
+				].join(''));
+		}
+
+		function check(id, counter) {
+			$.get('http://192.168.10.107/getImage', {
+				id: id
+			}, function(res) {
+				if (res.msg === 'ok') {
+					var c = counter();
+					getImage(res.data, c.finished);
+					$('.msg').html("finished: " + c.finished + " spend time: " + c.time + " ms");
+					socket.emit('finish one', c);
+				} else {
+					setTimeout(function () {
+						check(id, counter);
+					}, parseInt(res.nextTime));
+				}
+			});
+		}
+		
+		socket.on('news', function (data) {
+			socket.emit('client',{});
+		});
+		socket.on('url_data', function (data) {
+			console.log(data);
+		});
+
+		socket.on('start the job', function (data) {
+			//console.log(data);
+			var counter = count();
+			var requestCounter = count();
+			var num = parseInt(data.data.num);
+			var url = data.data.url;
+			//console.log(num);
+			for (var i = 0; i < num; i++) {
+				$.get('http://192.168.10.107/extract3', {
+					url: url,
+					time: new Date().getTime()
+				}, function(res) {
+					var rc = requestCounter();
+					socket.emit('request one', rc);
+					setTimeout(function(){
+						check(res.jobId, counter);
+					}, parseInt(res.nextTime));
+				});
+			}
+		});
+
+		socket.on('start the job urls', function (data) {
+			//console.log(data);
+			var counter = count();
+			var failCounter = count();
+			var urls = data.urls;
+			//console.log(urls);
+			console.log("test: " + urls.length);
+			$(".total").html(urls.length);
+			for (var i = 0; i < urls.length; i++) {
+				$.ajax({
+					type:"GET",
+					dataType:"json",
+					url:'http://192.168.10.107/extract',
+					data: {
+						url: (function(){return urls[i];})(),
+						time: new Date().getTime()
+					}
+				}).done(function (res) {
+					var c = counter();
+					getImage(res, c.finished);
+					socket.emit('finish one', c);
+					$(".msg").html(c.finished);
+				}).fail(function (jqXHR, textStatus, errorThrown) {
+					var fc = failCounter();
+					$(".fail").html(fc.finished);
+					socket.emit('fail one', fc);
+				});
+		}
+	});
+
+		socket.on('reset', function (data) {
+			location.reload();
+		});
+
+	</script>
+</body>
+</html>

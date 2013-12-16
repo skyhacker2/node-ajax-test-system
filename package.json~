@@ -1,0 +1,8 @@
+{
+  "name": "test_server",
+  "version": "1.0",
+  "description": "网站性能测试",
+  "dependencies": {
+    "socket.io": "0.9.16"
+  }
+}

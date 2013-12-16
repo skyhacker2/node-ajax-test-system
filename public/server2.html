@@ -1,0 +1,71 @@
+<html>
+<head>
+	<title>Server</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+	<div class="container">
+		<h1>Test Config Total Urls(<span class="url_num"></span>)</h1>
+		<div class="row">
+			<div class="col-sm-5">
+				<label>How many urls each client test:</label><input class="num form-control" type="text">
+			</div>
+		</div><br>
+		<!--
+		<form method="post" enctype="multipart/form-data" action="/file-upload">
+			<input type="file" name="test">
+			<input type="submit">
+		</form>
+		-->
+		<button class="start-btn">开始</button>
+		<button class="reset">重置</button>
+		<hr>
+		<h1>Client Lists</h1>
+		<table class="table clients">
+			<thead>
+				<tr>
+					<th>Client ID</th>
+					<th>Finished</th>
+					<th>Finished Time</th>
+					<th>Failed</th>
+				</tr>
+			<thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="js/jquery.js"></script>
+	<script>
+		var socket = io.connect('http://127.0.0.1:8080');
+		socket.on('news', function (data) {
+		    socket.emit('server', { msg: 'server' });
+		});
+		socket.on('client_conn', function(data) {
+			//console.log (data);
+			clients = data.clients
+			$('.clients tbody').html('');
+			for (var i = clients.length; i--;) {
+				$('.clients tbody').append([
+					'<tr>',
+					'<td>' + clients[i].id + '</td>',
+					'<td>' + clients[i].finished + '</td>',
+					'<td>' + clients[i].time + ' ms</td>',
+					'<td>' + clients[i].fail + '</td>',
+					].join(''));
+			}
+			$(".url_num").html(data.url_num);
+		});
+
+		$(".start-btn").click(function() {
+			console.log('start');
+			var num = $(".num").val();
+			socket.emit('start urls', {num: num});
+		});
+		$(".reset").click(function() {
+			socket.emit("reset clients",{});
+		});
+	</script>
+</body>
+</html>
